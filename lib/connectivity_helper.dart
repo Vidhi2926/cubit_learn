@@ -4,49 +4,41 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class ConnectivityHelper {
-  late final StreamSubscription<ConnectivityResult> _connectivitySubscription;
-  ConnectivityResult _previousConnectivityResult = ConnectivityResult.none;
+  late final Stream<ConnectivityResult> connectivityStream;
   bool _hasShownNoInternet = false;
-  bool _isLoading = false;
-  bool _hasMore = true;
 
   ConnectivityHelper({
     required Function onConnected,
     required Function onDisconnected,
     required Function onFetchOrders,
   }) {
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((ConnectivityResult result) async {
-      if (result != _previousConnectivityResult) {
-        if (result != ConnectivityResult.none) {
-          if (_hasShownNoInternet) {
-            Fluttertoast.showToast(
-              msg: "Welcome back, you regained your connection",
-              backgroundColor: Colors.green,
-              toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.BOTTOM,
-              timeInSecForIosWeb: 1,
-            );
-            _hasShownNoInternet = false; // Reset the flag
-          }
-          // Trigger fetch when network is restored
-          if (!_isLoading && _hasMore) {
-            onFetchOrders();
-          }
-          onConnected();
-        } else {
-          if (!_hasShownNoInternet) {
-            Fluttertoast.showToast(
-              msg: "No internet connection",
-              backgroundColor: Colors.red,
-              toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.BOTTOM,
-              timeInSecForIosWeb: 1,
-            );
-            _hasShownNoInternet = true; // Set the flag to true
-          }
-          onDisconnected();
+    connectivityStream = Connectivity().onConnectivityChanged;
+    connectivityStream.listen((result) {
+      if (result != ConnectivityResult.none) {
+        if (_hasShownNoInternet) {
+          Fluttertoast.showToast(
+            msg: "Welcome back, you regained your connection",
+            backgroundColor: Colors.green,
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 1,
+          );
+          _hasShownNoInternet = false; // Reset the flag
         }
-        _previousConnectivityResult = result; // Update previous result
+        onFetchOrders();
+        onConnected();
+      } else {
+        if (!_hasShownNoInternet) {
+          Fluttertoast.showToast(
+            msg: "No internet connection",
+            backgroundColor: Colors.red,
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 1,
+          );
+          _hasShownNoInternet = true; // Set the flag to true
+        }
+        onDisconnected();
       }
     });
   }
@@ -69,7 +61,12 @@ class ConnectivityHelper {
     }
   }
 
+  Future<bool> isConnected() async {
+    final connectivityResult = await Connectivity().checkConnectivity();
+    return connectivityResult != ConnectivityResult.none;
+  }
+
   void dispose() {
-    _connectivitySubscription.cancel();
+    // Handle any necessary cleanup here
   }
 }

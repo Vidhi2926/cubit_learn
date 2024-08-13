@@ -3,27 +3,41 @@ import 'package:cubit_learn/Screens/SignUp/SignUp/logic/signup_repository.dart';
 import 'package:cubit_learn/Screens/SignUp/SignUp/logic/signup_state.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 
+import '../../../../connectivity_helper.dart';
+
+// SignUpCubit class using ConnectivityHelper
 class SignUpCubit extends Cubit<SignUpState> {
   final SignUpRepo _signUpRepo;
-  final InternetConnectionChecker _connectionChecker;
-  bool _wasDisconnected = false;
+  late final ConnectivityHelper _connectivityHelper;
 
-  // Constructor accepting SignUpRepo and initializing connection monitoring
-  SignUpCubit(this._signUpRepo, this._connectionChecker) : super(SignUpInitial()) {
-    _monitorConnection();
+  // Constructor accepting SignUpRepo and initializing ConnectivityHelper
+  SignUpCubit(this._signUpRepo, InternetConnectionChecker ) : super(SignUpInitial()) {
+    _connectivityHelper = ConnectivityHelper(
+      onConnected: _onConnected,
+      onDisconnected: _onDisconnected,
+      onFetchOrders: _onFetchOrders, // Replace with appropriate function if needed
+    );
+    _checkInitialConnectivity();
   }
 
-  // Method to monitor internet connection status
-  void _monitorConnection() {
-    _connectionChecker.onStatusChange.listen((status) {
-      if (status == InternetConnectionStatus.disconnected) {
-        _wasDisconnected = true;
-        emit(NoInternetState());
-      } else if (status == InternetConnectionStatus.connected && _wasDisconnected) {
-        _wasDisconnected = false;
-        emit(InternetRestoredState());
-      }
-    });
+  // Method to handle internet connection restored
+  void _onConnected() {
+    // Optionally handle actions when connection is restored
+  }
+
+  // Method to handle internet connection lost
+  void _onDisconnected() {
+    emit(NoInternetState());
+  }
+
+  // Placeholder for a function to be called when checking initial connectivity
+  void _onFetchOrders() {
+    // Replace with actual functionality if needed
+  }
+
+  // Method to check initial connectivity
+  void _checkInitialConnectivity() async {
+    await _connectivityHelper.checkInitialConnectivity(onFetchOrders: _onFetchOrders);
   }
 
   // Method to handle OTP sending with internet connection check
@@ -35,8 +49,8 @@ class SignUpCubit extends Cubit<SignUpState> {
   }) async {
     emit(SignUpContinue()); // Show loading state
 
-    final hasConnection = await _connectionChecker.hasConnection;
-    if (!hasConnection) {
+    final isConnected = await _connectivityHelper.isConnected();
+    if (!isConnected) {
       emit(SignUpError(error: "No internet connection"));
       return;
     }
@@ -68,8 +82,8 @@ class SignUpCubit extends Cubit<SignUpState> {
   }) async {
     emit(SignUpContinue()); // Show loading state
 
-    final hasConnection = await _connectionChecker.hasConnection;
-    if (!hasConnection) {
+    final isConnected = await _connectivityHelper.isConnected();
+    if (!isConnected) {
       emit(SignUpError(error: "No internet connection"));
       return;
     }
@@ -90,5 +104,11 @@ class SignUpCubit extends Cubit<SignUpState> {
       final errorMessage = result?.statusMessage ?? 'Failed to sign up';
       emit(SignUpError(error: errorMessage));
     }
+  }
+
+  @override
+  Future<void> close() {
+    _connectivityHelper.dispose();
+    return super.close();
   }
 }

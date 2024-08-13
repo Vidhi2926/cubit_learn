@@ -1,4 +1,5 @@
 
+
 import 'package:cubit_learn/Screens/SignUp/SignUp/logic/signup_cubit.dart';
 import 'package:cubit_learn/Screens/SignUp/SignUp/logic/signup_repository.dart';
 import 'package:cubit_learn/Screens/SignUp/SignUp/logic/signup_state.dart';
@@ -377,32 +378,32 @@ class _SignupScreenState extends State<SignupScreen> {
                             if (_formKey.currentState?.validate() ?? false) {
                               if (isVisible) {
                                 // Proceed with sign-up submission
-                                  cubit.onSignUpSubmit(
-                                    firstName: firstController.text,
-                                    lastName: lastController.text,
-                                    phone: mobileController.text,
-                                    referral: referralcodeController.text,
-                                    pinCode: codeController.text,
-                                    password: passController.text,
-                                    otp: otpController.text,
-                                  );
+                                cubit.onSignUpSubmit(
+                                  firstName: firstController.text,
+                                  lastName: lastController.text,
+                                  phone: mobileController.text,
+                                  referral: referralcodeController.text,
+                                  pinCode: codeController.text,
+                                  password: passController.text,
+                                  otp: otpController.text,
+                                );
 
                               } else {
                                 // Send OTP
-                                  cubit.onOtpSend(
-                                    firstName: firstController.text,
-                                    lastName: lastController.text,
-                                    phone: mobileController.text,
-                                    referral: referralcodeController.text,
-                                  ).then((_) {
-                                    // Update visibility after OTP is successfully sent
-                                    setState(() {
-                                      isVisible = true; // Show additional fields and OTP input
-                                    });
-                                  }).catchError((error) {
-                                    // Handle error if OTP sending fails
-                                    print('Error sending OTP: $error');
+                                cubit.onOtpSend(
+                                  firstName: firstController.text,
+                                  lastName: lastController.text,
+                                  phone: mobileController.text,
+                                  referral: referralcodeController.text,
+                                ).then((_) {
+                                  // Update visibility after OTP is successfully sent
+                                  setState(() {
+                                    isVisible = true; // Show additional fields and OTP input
                                   });
+                                }).catchError((error) {
+                                  // Handle error if OTP sending fails
+                                  print('Error sending OTP: $error');
+                                });
 
                               }
                             }

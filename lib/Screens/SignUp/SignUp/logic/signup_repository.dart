@@ -78,7 +78,7 @@ class SignUpRepo {
           "user_id": "",
           "patient_id": "",
           "device_id": "9348d663fde2493f",
-          "accesstoken": "",
+         // "accesstoken": "",
           "fcmtoken": "cjGb_15pQCWrrbSqVtu7oV:APA91bEEgVgLOpRKx43ruK4-JI80HGqZ9KUzSwz1zMc8f--rFjyLSl8WyBfL01gNLmhyqkfsF2FWD94CLE-Hfi2q1DMmnOC9apyhF62PH2lqfwussbqfHGnQJX-ODrRk3MU9emOBxTiX",
           "app_version": "33",
           "os": "android",

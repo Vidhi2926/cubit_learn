@@ -1,4 +1,4 @@
-import 'package:cubit_learn/Screens/MyOrder/MyOrder/myorder_screen.dart';
+
 import 'package:cubit_learn/Screens/SignUp/SignUp/logic/signup_cubit.dart';
 import 'package:cubit_learn/Screens/SignUp/SignUp/logic/signup_repository.dart';
 import 'package:cubit_learn/Screens/SignUp/SignUp/logic/signup_state.dart';
@@ -106,19 +106,6 @@ class _SignupScreenState extends State<SignupScreen> {
     return null;
   }
 
-  Future<void> _checkInternetAndProceed(VoidCallback onSuccess) async {
-    final hasInternet = await InternetConnectionChecker().hasConnection;
-    if (!hasInternet) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('No internet connection.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } else {
-      onSuccess();
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -161,6 +148,19 @@ class _SignupScreenState extends State<SignupScreen> {
                   content: Text('Registration successful'), // Success message
                   backgroundColor: Colors.green, // Green background for success
                 ),
+              );
+            }
+            else if (state is NoInternetState) {
+              Fluttertoast.showToast(
+                msg: 'No internet connection.',
+                backgroundColor: Colors.red,
+                toastLength: Toast.LENGTH_SHORT,
+              );
+            }else if(state is InternetRestoredState){
+              Fluttertoast.showToast(
+                msg: 'Welcome back \n Now You are onlie',
+                backgroundColor: Colors.green,
+                toastLength: Toast.LENGTH_SHORT,
               );
             }
           },
@@ -377,7 +377,6 @@ class _SignupScreenState extends State<SignupScreen> {
                             if (_formKey.currentState?.validate() ?? false) {
                               if (isVisible) {
                                 // Proceed with sign-up submission
-                                _checkInternetAndProceed(() {
                                   cubit.onSignUpSubmit(
                                     firstName: firstController.text,
                                     lastName: lastController.text,
@@ -387,10 +386,9 @@ class _SignupScreenState extends State<SignupScreen> {
                                     password: passController.text,
                                     otp: otpController.text,
                                   );
-                                });
+
                               } else {
                                 // Send OTP
-                                _checkInternetAndProceed(() {
                                   cubit.onOtpSend(
                                     firstName: firstController.text,
                                     lastName: lastController.text,
@@ -405,7 +403,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                     // Handle error if OTP sending fails
                                     print('Error sending OTP: $error');
                                   });
-                                });
+
                               }
                             }
                           },

@@ -19,9 +19,9 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (context) => MyorderCubit(MyorderRepo(),InternetConnectionChecker()),
+          create: (context) => MyorderCubit(MyorderRepo(),),
         ), BlocProvider(
-          create: (context) => SignUpCubit(SignUpRepo(),InternetConnectionChecker(), // Provide the second argument
+          create: (context) => SignUpCubit(SignUpRepo(),InternetConnectionChecker() // Provide the second argument
           ),
 
 
@@ -31,7 +31,7 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        initialRoute: '/login',
+        initialRoute: '/signup',
         routes: {
           '/login': (context) => LoginScreen(),
           '/myOrder': (context) => MyOrderScreen(),

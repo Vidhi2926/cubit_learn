@@ -4,9 +4,15 @@ import '../../Model/myorder_entity.dart';
 @immutable
 abstract class MyorderState {}
 
+class NoInternetState extends MyorderState {}
+
+class InternetRestoredState extends MyorderState {}
+
 class MyorderInitial extends MyorderState {}
 
 class MyorderLoading extends MyorderState {}
+
+class MyOrderConnected extends MyorderState{}
 
 class MyorderLoaded extends MyorderState {
   final List<MyorderDataResults> orders;

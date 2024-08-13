@@ -8,9 +8,11 @@ abstract class LoginState extends Equatable {
   @override
   List<Object> get props => [];
 }
-class ConnectivityConnected extends LoginState {}
 
-class ConnectivityDisconnected extends LoginState {}
+class NoInternetState extends LoginState {}
+
+class InternetRestoredState extends LoginState {}
+
 
 class LoginInitial extends LoginState {}
 

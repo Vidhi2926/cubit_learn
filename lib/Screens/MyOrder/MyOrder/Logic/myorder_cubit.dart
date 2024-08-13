@@ -1,7 +1,6 @@
 import 'dart:async';
-import 'package:dio/dio.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:bloc/bloc.dart';
+import '../../../../connectivity_helper.dart';
 import '../../Model/myorder_entity.dart';
 import 'myorder_repo.dart';
 import 'myorder_state.dart';
@@ -13,20 +12,15 @@ class MyorderCubit extends Cubit<MyorderState> {
   bool _isLoading = false;
   final MyorderRepo orderRepo;
   String? billNo;
-  final InternetConnectionChecker _connectionChecker;
-  StreamSubscription? _connectionSubscription;
+  late final ConnectivityHelper _connectivityHelper;
 
-  MyorderCubit(this.orderRepo, this._connectionChecker) : super(MyorderInitial()) {
-    _monitorConnection();
-  }
-
-  Future<void> _monitorConnection() async {
-    _connectionSubscription = _connectionChecker.onStatusChange.listen((status) {
-      final hasConnection = status == InternetConnectionStatus.connected;
-      if (!hasConnection) {
-        emit(MyorderError("No internet connection"));
-      }
-    });
+  MyorderCubit(this.orderRepo) : super(MyorderInitial()) {
+    _connectivityHelper = ConnectivityHelper(
+      onConnected: () {},
+      onDisconnected: () {},
+      onFetchOrders: fetchOrders,
+    );
+    _connectivityHelper.checkInitialConnectivity(onFetchOrders: fetchOrders);
   }
 
   Future<void> fetchOrders({bool refresh = false}) async {
@@ -40,32 +34,17 @@ class MyorderCubit extends Cubit<MyorderState> {
       _isLoading = true;
     }
 
-    final hasConnection = await _connectionChecker.hasConnection;
-    if (!hasConnection) {
-      emit(MyorderError("No internet connection"));
-      _isLoading = false;
-      return;
-    }
-
     try {
       final response = await orderRepo.fetchOrders(_currentPage, billNo: billNo ?? '');
-
       if (response != null) {
         final newOrders = response.data.results;
         _orders.addAll(newOrders);
-
         _hasMore = newOrders.length == 20;
-
         emit(MyorderLoaded(
           orders: _orders,
           hasReachedMax: !_hasMore,
         ));
-
-        if (refresh) {
-          _currentPage = 2;
-        } else {
-          _currentPage++;
-        }
+        _currentPage = refresh ? 2 : _currentPage + 1;
       } else {
         emit(MyorderError('Failed to fetch orders. Response was null.'));
       }
@@ -83,7 +62,7 @@ class MyorderCubit extends Cubit<MyorderState> {
 
   @override
   Future<void> close() {
-    _connectionSubscription?.cancel();
+    _connectivityHelper.dispose();
     return super.close();
   }
 }

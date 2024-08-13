@@ -1,11 +1,14 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'filter_screen.dart';
 import 'Logic/myorder_cubit.dart';
 import 'Logic/myorder_state.dart';
-import 'filter_screen.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class MyOrderScreen extends StatefulWidget {
+  const MyOrderScreen({super.key});
+
   @override
   _MyOrderScreenState createState() => _MyOrderScreenState();
 }
@@ -16,7 +19,7 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<MyorderCubit>().fetchOrders();
+    _fetchInitialData();
 
     _scrollController.addListener(() {
       if (_scrollController.position.pixels ==
@@ -30,6 +33,10 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchInitialData() async {
+    await context.read<MyorderCubit>().fetchOrders();
   }
 
   void _showFilterScreen(BuildContext context) {
@@ -48,20 +55,6 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
     );
   }
 
-  Future<void> _checkInternetAndProceed(VoidCallback onSuccess) async {
-    final hasInternet = await InternetConnectionChecker().hasConnection;
-    if (!hasInternet) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('No internet connection.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } else {
-      onSuccess();
-    }
-  }
-
   Widget _buildNoDataScreen() {
     return const Center(
       child: Column(
@@ -78,12 +71,21 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
     );
   }
 
+  void _showToast(String message) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      timeInSecForIosWeb: 1,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(0xff0039a6),
-        title: Text('My Orders', style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color(0xff0039a6),
+        title: const Text('My Orders', style: TextStyle(color: Colors.white)),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
@@ -100,31 +102,36 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
           ),
         ],
       ),
-      body: BlocBuilder<MyorderCubit, MyorderState>(
-        builder: (context, state) {
-          if (state is MyorderLoading) {
-            return Center(child: CircularProgressIndicator());
+      body: BlocListener<MyorderCubit, MyorderState>(
+        listener: (context, state) {
+          if (state is MyorderError) {
+            _showToast(state.message);
           }
 
           if (state is MyorderLoaded) {
             if (state.orders.isEmpty) {
-              return _buildNoDataScreen();
+              _showToast("No orders found");
+            }
+          }
+        },
+        child: BlocBuilder<MyorderCubit, MyorderState>(
+          builder: (context, state) {
+            if (state is MyorderLoading) {
+              return Center(child: CircularProgressIndicator());
             }
 
-            bool showLoadingIndicator = !state.hasReachedMax;
+            if (state is MyorderLoaded) {
+              if (state.orders.isEmpty) {
+                return ListView(
+                  children: [
+                    _buildNoDataScreen(),
+                  ],
+                );
+              }
 
-            return NotificationListener<ScrollNotification>(
-              onNotification: (scrollInfo) {
-                if (!state.hasReachedMax &&
-                    scrollInfo.metrics.pixels ==
-                        scrollInfo.metrics.maxScrollExtent) {
-                  _checkInternetAndProceed(() {
-                    context.read<MyorderCubit>().fetchOrders();
-                  });
-                }
-                return false;
-              },
-              child: ListView.separated(
+              bool showLoadingIndicator = !state.hasReachedMax;
+
+              return ListView.separated(
                 controller: _scrollController,
                 itemCount: state.orders.length + (showLoadingIndicator ? 1 : 0),
                 separatorBuilder: (context, index) =>
@@ -153,10 +160,8 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
                     'Completed': Icons.done,
                   };
 
-                  Color containerColor = statusColors[order
-                      .orderStatusDisplayText] ?? Colors.grey;
-                  IconData iconData = statusIcons[order
-                      .orderStatusDisplayText] ?? Icons.help;
+                  Color containerColor = statusColors[order.orderStatusDisplayText] ?? Colors.grey;
+                  IconData iconData = statusIcons[order.orderStatusDisplayText] ?? Icons.help;
 
                   return Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -181,10 +186,12 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(iconData, color: Colors.white,size: 12,),
-                                      SizedBox(width: 8.0),
-                                      Text(order.orderStatusDisplayText,
-                                          style: TextStyle(color: Colors.white,fontSize: 12)),
+                                      Icon(iconData, color: Colors.white, size: 16),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        order.orderStatusDisplayText,
+                                        style: TextStyle(color: Colors.white),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -192,26 +199,24 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
                             ),
                           ],
                         ),
-                        SizedBox(height: 8.0),
+                        SizedBox(height: 10),
                         Text('Amount: ${order.amount}',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold)),
+                            style: TextStyle(fontSize: 16, color: Colors.black)),
+                        SizedBox(height: 10),
                       ],
                     ),
                   );
                 },
-              ),
-            );
-          }
+              );
+            }
 
-          if (state is MyorderError) {
-            return Center(
-              child: Text(state.message, style: TextStyle(color: Colors.red)),
-            );
-          }
+            if (state is MyorderError) {
+              return Center(child: Text(state.message));
+            }
 
-          return SizedBox.shrink();
-        },
+            return Center(child: CircularProgressIndicator());
+          },
+        ),
       ),
     );
   }

@@ -1,8 +1,10 @@
 class SignUpState {}
 
-class ConnectivityConnected extends SignUpState {}
+class NoInternetState extends SignUpState {}
 
-class ConnectivityDisconnected extends SignUpState {}
+class InternetRestoredState extends SignUpState {}
+
+class RefreshingState extends SignUpState{}
 
 final class SignUpInitial extends SignUpState {}
 

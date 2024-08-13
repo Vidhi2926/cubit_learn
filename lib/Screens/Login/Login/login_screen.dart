@@ -4,6 +4,7 @@ import 'Logic/login_cubit.dart';
 import 'Logic/login_repository.dart';
 import 'Logic/login_state.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:fluttertoast/fluttertoast.dart'; // Add fluttertoast dependency
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -27,20 +28,6 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _checkInternetAndProceed(VoidCallback onSuccess) async {
-    final hasInternet = await InternetConnectionChecker().hasConnection;
-    if (!hasInternet) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('No internet connection.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } else {
-      onSuccess();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,19 +44,29 @@ class _LoginScreenState extends State<LoginScreen> {
         child: BlocConsumer<LoginCubit, LoginState>(
           listener: (context, state) {
             if (state is LoginFailure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.errorMessage),
-                  backgroundColor: Colors.red,
-                ),
+              Fluttertoast.showToast(
+                msg: state.errorMessage,
+                backgroundColor: Colors.red,
+                toastLength: Toast.LENGTH_SHORT,
               );
             } else if (state is LoginLoaded) {
               Navigator.pushNamed(context, '/myOrder');
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Login successful'),
-                  backgroundColor: Colors.green,
-                ),
+              Fluttertoast.showToast(
+                msg: 'Login successful',
+                backgroundColor: Colors.green,
+                toastLength: Toast.LENGTH_SHORT,
+              );
+            } else if (state is NoInternetState) {
+              Fluttertoast.showToast(
+                msg: 'No internet connection.',
+                backgroundColor: Colors.red,
+                toastLength: Toast.LENGTH_SHORT,
+              );
+            }else if(state is InternetRestoredState){
+              Fluttertoast.showToast(
+                  msg: 'Welcome back \n Now You are onlie',
+                backgroundColor: Colors.green,
+                toastLength: Toast.LENGTH_SHORT,
               );
             }
           },
@@ -155,12 +152,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           : ElevatedButton(
                         onPressed: () {
                           if (_formKey.currentState?.validate() ?? false) {
-                            _checkInternetAndProceed(() {
-                              BlocProvider.of<LoginCubit>(context).login(
-                                mobileController.text,
-                                passController.text,
-                              );
-                            });
+                            BlocProvider.of<LoginCubit>(context).login(
+                              mobileController.text,
+                              passController.text,
+                            );
                           }
                         },
                         style: ElevatedButton.styleFrom(

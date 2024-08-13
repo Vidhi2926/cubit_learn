@@ -6,23 +6,40 @@ import 'package:internet_connection_checker/internet_connection_checker.dart';
 class SignUpCubit extends Cubit<SignUpState> {
   final SignUpRepo _signUpRepo;
   final InternetConnectionChecker _connectionChecker;
+  bool _wasDisconnected = false;
 
-  // Corrected constructor to accept instances of SignUpRepo and InternetConnectionChecker
-  SignUpCubit(this._signUpRepo, this._connectionChecker) : super(SignUpInitial());
+  // Constructor accepting SignUpRepo and initializing connection monitoring
+  SignUpCubit(this._signUpRepo, this._connectionChecker) : super(SignUpInitial()) {
+    _monitorConnection();
+  }
 
+  // Method to monitor internet connection status
+  void _monitorConnection() {
+    _connectionChecker.onStatusChange.listen((status) {
+      if (status == InternetConnectionStatus.disconnected) {
+        _wasDisconnected = true;
+        emit(NoInternetState());
+      } else if (status == InternetConnectionStatus.connected && _wasDisconnected) {
+        _wasDisconnected = false;
+        emit(InternetRestoredState());
+      }
+    });
+  }
+
+  // Method to handle OTP sending with internet connection check
   Future<void> onOtpSend({
     required String firstName,
     required String lastName,
     required String phone,
     required String referral,
   }) async {
+    emit(SignUpContinue()); // Show loading state
+
     final hasConnection = await _connectionChecker.hasConnection;
     if (!hasConnection) {
       emit(SignUpError(error: "No internet connection"));
-      print('No internet connection, emitting SignUpError state'); // Debugging print
       return;
     }
-    emit(SignUpContinue()); // Show loading state
 
     final result = await _signUpRepo.sendOtp(
       firstName: firstName,
@@ -39,6 +56,7 @@ class SignUpCubit extends Cubit<SignUpState> {
     }
   }
 
+  // Method to handle sign-up submission with internet connection check
   Future<void> onSignUpSubmit({
     required String firstName,
     required String lastName,
@@ -49,6 +67,12 @@ class SignUpCubit extends Cubit<SignUpState> {
     required String pinCode,
   }) async {
     emit(SignUpContinue()); // Show loading state
+
+    final hasConnection = await _connectionChecker.hasConnection;
+    if (!hasConnection) {
+      emit(SignUpError(error: "No internet connection"));
+      return;
+    }
 
     final result = await _signUpRepo.sendSignDetails(
       firstName: firstName,

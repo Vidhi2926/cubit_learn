@@ -16,12 +16,16 @@ import 'Screens/SignUp/SignUp/logic/signup_cubit.dart';
 import 'Screens/SignUp/SignUp/logic/signup_repository.dart';
 
 class Routes {
-  static Route? onGenerateRoute(RouteSettings settings) {
+  static Future<Route<dynamic>?> onGenerateRoute(RouteSettings settings) async {
+
     switch (settings.name) {
       case "/login":
         return MaterialPageRoute(
           builder: (context) => BlocProvider(
-            create: (context) => LoginCubit(LoginRepository(), InternetConnectionChecker()),
+            create: (context) => LoginCubit(
+              LoginRepository(),
+              InternetConnectionChecker(),
+            ),
             child: LoginScreen(),
           ),
         );
@@ -29,7 +33,10 @@ class Routes {
       case "/myOrder":
         return MaterialPageRoute(
           builder: (context) => BlocProvider(
-            create: (context) => MyorderCubit(MyorderRepo(),InternetConnectionChecker()),
+            create: (context) => MyorderCubit(
+              MyorderRepo(),
+
+            ),
             child: MyOrderScreen(),
           ),
         );
@@ -37,7 +44,10 @@ class Routes {
       case "/signup":
         return MaterialPageRoute(
           builder: (context) => BlocProvider(
-            create: (context) => SignUpCubit(SignUpRepo(), InternetConnectionChecker()),
+            create: (context) => SignUpCubit(
+              SignUpRepo(),InternetConnectionChecker()
+
+            ),
             child: SignupScreen(),
           ),
         );
